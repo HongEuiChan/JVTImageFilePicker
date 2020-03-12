@@ -261,6 +261,7 @@ static int cameraIndex = 0;
         if (!error) {
             self.imageDisplayVC = [[JVTImagePreviewVC alloc] initWithImage:image];
             self.imageDisplayVC.delegate = self;
+            self.imageDisplayVC.modalPresentationStyle = UIModalPresentationFullScreen;
             
             UIView *mainWindow = [[UIApplication sharedApplication].windows lastObject];
             UIView *snapShot = [mainWindow snapshotViewAfterScreenUpdates:YES];
