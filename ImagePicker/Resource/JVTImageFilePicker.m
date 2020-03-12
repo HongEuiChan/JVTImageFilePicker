@@ -74,8 +74,14 @@
                                                               actionType:kActionType_cancel
                                                                  handler:^(JVTActionSheetAction *action) {
                                                                      @strongify(self);
-                                                                     [self dismissPresentedControllerAndInformDelegate:nil];
+                                                                     [self dismissPresentedControllerAndInformDelegate:self];
                                                                  }];
+    JVTActionSheetAction *blank = [JVTActionSheetAction actionWithTitle:@""
+                                                              actionType:kActionType_cancel
+                                                                 handler:^(JVTActionSheetAction *action) {
+                                                                     //
+                                                                 }];
+    
     if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary]) {
         JVTActionSheetAction *photoLibrary = [JVTActionSheetAction actionWithTitle:photoLibraryTxt
                                                                         actionType:kActionType_default
@@ -103,6 +109,13 @@
     if (customAlertActions) {
         for (JVTActionSheetAction *alertAction in customAlertActions) {
             [self.actionSheet addAction:alertAction];
+        }
+    }
+    
+    if (@available(iOS 11.0, *)) {
+        UIWindow *window = UIApplication.sharedApplication.keyWindow;
+        if(window.safeAreaInsets.bottom > 0) {
+            [self.actionSheet addAction:blank];
         }
     }
     
@@ -263,10 +276,14 @@
 #pragma mark - delegate updates
 
 - (void)dismissPresentedControllerAndInformDelegate:(UIViewController *)presentedController {
-    [presentedController dismissViewControllerAnimated:YES
-                                            completion:^(void) {
-                                                [self updateDelegateOnDissmiss];
-                                            }];
+    if(presentedController != nil) {
+        [presentedController dismissViewControllerAnimated:YES
+                                        completion:^(void) {
+                                            [self updateDelegateOnDissmiss];
+                                        }];
+    } else {
+        [self updateDelegateOnDissmiss];
+    }
 }
 
 - (void)updateDelegateOnDissmiss {
@@ -332,8 +349,10 @@
 #pragma mark - ImagePreview delegate
 
 - (void)didPressSendOnImage:(UIImage *)image {
-    [self.presentedFromController dismissViewControllerAnimated:YES completion:nil];
     [self.delegate didPickImage:image withImageName:@"asset"];
+    
+    [self.presentedFromController dismissViewControllerAnimated:YES completion:nil];
+    
     if (self.imagePickerController != nil) {
         [self.imagePickerController dismissViewControllerAnimated:YES completion:nil];
     }
@@ -347,6 +366,8 @@
     }
     JVTImagePreviewVC *imagePreviewViewController = [[JVTImagePreviewVC alloc] initWithImage:image];
     imagePreviewViewController.delegate = self;
+    imagePreviewViewController.modalPresentationStyle = UIModalPresentationFullScreen;
+    
     if (self.presentedFromController.navigationController) {
         [self.presentedFromController.navigationController pushViewController:imagePreviewViewController animated:YES];
     } else {
